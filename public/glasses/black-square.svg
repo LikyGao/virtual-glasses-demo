@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140">
+  <!-- 黑色方框眼镜。坐标约定：镜片中心线 y=70，左右镜片中心 x=110 / x=290 -->
+  <defs>
+    <linearGradient id="lensGlare" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.20" />
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g fill="none" stroke="#14171B" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 镜腿 -->
+    <path d="M44 60 L8 50" />
+    <path d="M356 60 L392 50" />
+    <!-- 鼻梁 -->
+    <path d="M176 58 C192 50, 208 50, 224 58" />
+  </g>
+
+  <!-- 镜片（半透明填充，保留一点真实感） -->
+  <rect x="44" y="34" width="132" height="74" rx="16" fill="url(#lensGlare)" stroke="#14171B" stroke-width="10" />
+  <rect x="224" y="34" width="132" height="74" rx="16" fill="url(#lensGlare)" stroke="#14171B" stroke-width="10" />
+</svg>

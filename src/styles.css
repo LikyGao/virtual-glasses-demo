@@ -1,0 +1,415 @@
+/* ============================================================
+   虚拟眼镜试戴 — 样式表
+   设计取向：把预览区当成一台「取景设备」，深色取景框 + 等宽字读数，
+   周围保持安静的浅灰纸面，重点只放在画面本身。
+   ============================================================ */
+
+:root {
+  --ink: #14181d;
+  --slate: #5a6672;
+  --paper: #eceef1;
+  --surface: #ffffff;
+  --line: #d3d9e0;
+  --stage: #101418;
+  --accent: #1c6b5b;
+  --accent-tint: #e2efeb;
+  --alert: #a33b2a;
+
+  --radius: 12px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 页面骨架 ---------- */
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.masthead {
+  margin-bottom: 24px;
+}
+
+.masthead__eyebrow {
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.masthead__title {
+  margin: 0;
+  font-size: clamp(30px, 6vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.masthead__lede {
+  margin: 10px 0 0;
+  max-width: 44ch;
+  color: var(--slate);
+}
+
+.layout {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+    align-items: start;
+  }
+}
+
+/* ---------- 取景区 ---------- */
+
+.stage__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--stage);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* video 只作为解码源，不直接显示 */
+.stage__video {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 四角取景刻度 */
+.stage__ticks span {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.stage__ticks span:nth-child(1) {
+  top: 12px;
+  left: 12px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.stage__ticks span:nth-child(2) {
+  top: 12px;
+  right: 12px;
+  border-left: 0;
+  border-bottom: 0;
+}
+.stage__ticks span:nth-child(3) {
+  bottom: 12px;
+  left: 12px;
+  border-right: 0;
+  border-top: 0;
+}
+.stage__ticks span:nth-child(4) {
+  bottom: 12px;
+  right: 12px;
+  border-left: 0;
+  border-top: 0;
+}
+
+.stage__overlays {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.stage__overlays > * {
+  pointer-events: auto;
+}
+
+.stage__hint {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(16, 20, 24, 0.82);
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.stage__readout {
+  position: absolute;
+  top: 16px;
+  left: 44px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ---------- 提示卡片 ---------- */
+
+.notice {
+  max-width: 340px;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.96);
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(16, 20, 24, 0.28);
+}
+
+.notice--error {
+  border-top: 3px solid var(--alert);
+}
+
+.notice__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.notice--error .notice__title {
+  color: var(--alert);
+}
+
+.notice__body {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--slate);
+}
+
+.notice .button {
+  margin-top: 14px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- 右侧面板 ---------- */
+
+.panel {
+  display: grid;
+  gap: 24px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.section-label {
+  margin: 0 0 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.selector__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.frame-card {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.frame-card:hover {
+  border-color: var(--accent);
+}
+
+.frame-card--selected {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+/* 深色底衬，浅色和透明镜框在预览里同样清晰 */
+.frame-card__preview {
+  display: block;
+  padding: 10px 8px;
+  margin-bottom: 8px;
+  background: var(--stage);
+  border-radius: 8px;
+}
+
+.frame-card__preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.frame-card__name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.frame-card__caption {
+  font-size: 12px;
+  color: var(--slate);
+}
+
+.frame-card--selected .frame-card__caption {
+  color: var(--accent);
+}
+
+/* ---------- 按钮 ---------- */
+
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 460px) {
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.button {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.button--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.button--primary:hover:not(:disabled) {
+  background: #175747;
+}
+
+.button--secondary {
+  background: var(--surface);
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.button--secondary:hover {
+  background: #f4f5f7;
+}
+
+.button--ghost {
+  min-height: 40px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.privacy-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--slate);
+}
+
+/* ---------- 保存提示 ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  box-shadow: 0 10px 30px rgba(16, 20, 24, 0.25);
+}
+
+/* ---------- 无障碍 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "virtual-glasses-demo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "浏览器端虚拟眼镜试戴 Demo（React + TypeScript + Vite + MediaPipe Face Landmarker）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.0"
+  }
+}

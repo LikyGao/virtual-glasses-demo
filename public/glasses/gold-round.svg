@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140">
+  <!-- 金色圆框眼镜。镜片中心 (108,70) / (292,70)，半径 62 -->
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F0D68B" />
+      <stop offset="45%" stop-color="#C9A227" />
+      <stop offset="100%" stop-color="#9C7B18" />
+    </linearGradient>
+    <radialGradient id="roundLens" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22" />
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0.03" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <g fill="none" stroke="url(#gold)" stroke-width="6" stroke-linecap="round">
+    <!-- 镜腿 -->
+    <path d="M48 58 L8 48" />
+    <path d="M352 58 L392 48" />
+    <!-- 鼻梁：细双梁，圆框眼镜的典型结构 -->
+    <path d="M170 62 C185 54, 215 54, 230 62" />
+    <path d="M174 76 C188 70, 212 70, 226 76" stroke-width="4" />
+  </g>
+
+  <circle cx="108" cy="70" r="62" fill="url(#roundLens)" stroke="url(#gold)" stroke-width="7" />
+  <circle cx="292" cy="70" r="62" fill="url(#roundLens)" stroke="url(#gold)" stroke-width="7" />
+</svg>

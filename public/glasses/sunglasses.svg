@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140">
+  <!-- 墨镜：深色镜片 + 黑色镜框，镜片带轻微反光 -->
+  <defs>
+    <linearGradient id="darkLens" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0%" stop-color="#3A4250" stop-opacity="0.92" />
+      <stop offset="45%" stop-color="#1B2027" stop-opacity="0.94" />
+      <stop offset="100%" stop-color="#0A0C10" stop-opacity="0.96" />
+    </linearGradient>
+    <linearGradient id="sunGlare" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.30" />
+      <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g fill="none" stroke="#0D0F13" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 56 L6 46" />
+    <path d="M358 56 L394 46" />
+    <path d="M172 52 C186 44, 214 44, 228 52" />
+  </g>
+
+  <!-- 飞行员式的圆润梯形镜片 -->
+  <path d="M40 44 C40 32, 50 28, 84 28 L158 28 C176 28, 180 34, 180 46 C180 84, 158 112, 112 112 C66 112, 40 86, 40 44 Z"
+        fill="url(#darkLens)" stroke="#0D0F13" stroke-width="10" stroke-linejoin="round" />
+  <path d="M360 44 C360 32, 350 28, 316 28 L242 28 C224 28, 220 34, 220 46 C220 84, 242 112, 288 112 C334 112, 360 86, 360 44 Z"
+        fill="url(#darkLens)" stroke="#0D0F13" stroke-width="10" stroke-linejoin="round" />
+
+  <!-- 反光 -->
+  <path d="M58 42 C58 34, 70 32, 96 32 L134 32 C118 52, 96 70, 62 74 C58 62, 58 50, 58 42 Z" fill="url(#sunGlare)" />
+  <path d="M342 42 C342 34, 330 32, 304 32 L266 32 C282 52, 304 70, 338 74 C342 62, 342 50, 342 42 Z" fill="url(#sunGlare)" />
+</svg>
