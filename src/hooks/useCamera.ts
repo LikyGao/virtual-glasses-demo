@@ -8,17 +8,17 @@ function describeCameraError(error: unknown): string {
     switch (error.name) {
       case 'NotAllowedError':
       case 'SecurityError':
-        return '摄像头权限被拒绝。请在浏览器地址栏的权限设置里允许使用摄像头，然后重新开启。';
+        return 'カメラへのアクセスが拒否されました。ブラウザのアドレスバーにある権限設定でカメラの使用を許可し、再度オンにしてください。';
       case 'NotFoundError':
       case 'OverconstrainedError':
-        return '没有找到可用的摄像头设备。请确认设备已连接后重试。';
+        return '使用できるカメラが見つかりません。カメラが接続されていることを確認し、もう一度お試しください。';
       case 'NotReadableError':
-        return '摄像头已被其它程序占用。请关闭视频会议等应用后重试。';
+        return 'カメラは別のアプリで使用中です。ビデオ会議などのアプリを閉じてから、もう一度お試しください。';
       default:
-        return `摄像头启动失败：${error.name}`;
+        return `カメラの起動に失敗しました：${error.name}`;
     }
   }
-  return '摄像头启动失败，请刷新页面后重试。';
+  return 'カメラを起動できませんでした。ページを再読み込みしてお試しください。';
 }
 
 /** 当前环境是否支持摄像头（含非 HTTPS 场景） */
@@ -66,7 +66,7 @@ export function useCamera(
     if (!isCameraSupported()) {
       setStatus('error');
       setError(
-        '当前浏览器不支持摄像头，或页面不在安全环境下。请使用 https:// 或 localhost 打开本页面。',
+        'このブラウザはカメラに対応していないか、安全な接続で開かれていません。https:// または localhost でこのページを開いてください。',
       );
       return;
     }

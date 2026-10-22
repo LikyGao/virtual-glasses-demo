@@ -5,7 +5,7 @@ import './styles.css';
 
 const container = document.getElementById('root');
 if (!container) {
-  throw new Error('找不到 #root 挂载节点');
+  throw new Error('マウント先の #root 要素が見つかりません');
 }
 
 // StrictMode 下 effect 会执行两次：摄像头由用户手动开启 + token 防重，

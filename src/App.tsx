@@ -40,25 +40,25 @@ export default function App() {
     if (!canvas || camera.status !== 'running') return;
     // 第一帧还没画进来时 canvas 仍是默认尺寸，此时导出会得到空图
     if (canvas.width < 2 || canvas.height < 2) {
-      setToast('画面还没准备好，请稍等一下再拍');
+      setToast('映像の準備中です。少し待ってから撮影してください。');
       return;
     }
     try {
       await downloadCanvasAsPng(canvas);
-      setToast('照片已保存到下载目录');
+      setToast('写真をダウンロードフォルダーに保存しました。');
     } catch (error) {
       console.error('[Screenshot] 导出失败：', error);
-      setToast('照片保存失败，请重试');
+      setToast('写真を保存できませんでした。もう一度お試しください。');
     }
   }, [camera.status]);
 
   return (
     <div className="page">
       <header className="masthead">
-        <p className="masthead__eyebrow">本地运行 · 无需上传</p>
-        <h1 className="masthead__title">虚拟眼镜试戴</h1>
+        <p className="masthead__eyebrow">デバイス内で処理 · アップロード不要</p>
+        <h1 className="masthead__title">バーチャルメガネ試着</h1>
         <p className="masthead__lede">
-          打开摄像头，镜框会跟着你的眼睛走。识别与合成全部在浏览器里完成。
+          カメラをオンにすると、メガネが目の動きに合わせてフィットします。顔の認識と映像の合成は、すべてブラウザ内で行われます。
         </p>
       </header>
 
@@ -90,7 +90,7 @@ export default function App() {
           />
 
           <p className="privacy-note">
-            摄像头画面只在本机内存中处理，不会发送到任何服务器，也不会被保存。
+            カメラ映像はデバイスのメモリ内でのみ処理され、サーバーへの送信や保存は行われません。
           </p>
         </div>
       </main>

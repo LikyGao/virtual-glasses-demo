@@ -20,7 +20,7 @@ export function downloadCanvasAsPng(canvas: HTMLCanvasElement): Promise<void> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (!blob) {
-        reject(new Error('画面导出失败'));
+        reject(new Error('画像の書き出しに失敗しました'));
         return;
       }
       const url = URL.createObjectURL(blob);

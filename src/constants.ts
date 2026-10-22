@@ -54,9 +54,9 @@ export const SCREENSHOT_FILENAME_PREFIX = 'virtual-glasses';
 
 /** 界面文案集中管理 */
 export const MESSAGES = {
-  modelLoading: '正在加载人脸识别模型……',
-  modelError: '人脸识别模型加载失败，请刷新页面重试。',
-  faceNotFound: '请将脸移入画面',
-  cameraIdle: '摄像头未开启',
-  cameraStarting: '正在开启摄像头……',
+  modelLoading: '顔認識モデルを読み込み中…',
+  modelError: '顔認識モデルを読み込めませんでした。ページを再読み込みしてお試しください。',
+  faceNotFound: '顔が画面に入るようにしてください',
+  cameraIdle: 'カメラはオフです',
+  cameraStarting: 'カメラを起動中…',
 } as const;

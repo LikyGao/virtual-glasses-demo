@@ -21,14 +21,14 @@ export function CameraControls({
   const isStarting = cameraStatus === 'starting';
 
   return (
-    <section className="controls" aria-label="操作区域">
+    <section className="controls" aria-label="操作パネル">
       {isRunning || isStarting ? (
         <button type="button" className="button button--secondary" onClick={onStop}>
-          关闭摄像头
+          カメラをオフにする
         </button>
       ) : (
         <button type="button" className="button button--primary" onClick={onStart}>
-          开启摄像头
+          カメラをオンにする
         </button>
       )}
 
@@ -38,7 +38,7 @@ export function CameraControls({
         onClick={onCapture}
         disabled={!isRunning}
       >
-        拍摄照片
+        写真を撮る
       </button>
     </section>
   );

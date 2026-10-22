@@ -20,8 +20,8 @@ export const GLASSES_ASSET_ASPECT_RATIO = 400 / 140;
 export const GLASSES_CATALOG: GlassesConfig[] = [
   {
     id: 'black-square',
-    name: '黑色方框',
-    caption: '经典板材 · 全框',
+    name: 'ブラックスクエア',
+    caption: '定番のセルフレーム · フルリム',
     assetUrl: 'glasses/black-square.svg',
     widthScale: 1.58,
     verticalOffset: 0.04,
@@ -30,8 +30,8 @@ export const GLASSES_CATALOG: GlassesConfig[] = [
   },
   {
     id: 'gold-round',
-    name: '金色圆框',
-    caption: '细金属 · 复古圆框',
+    name: 'ゴールドラウンド',
+    caption: '細身のメタル · レトロな丸型',
     assetUrl: 'glasses/gold-round.svg',
     widthScale: 1.52,
     verticalOffset: 0.03,
@@ -40,8 +40,8 @@ export const GLASSES_CATALOG: GlassesConfig[] = [
   },
   {
     id: 'clear-frame',
-    name: '透明框',
-    caption: '透明醋酸纤维 · 粗框',
+    name: 'クリアフレーム',
+    caption: 'クリアアセテート · 太めのフレーム',
     assetUrl: 'glasses/clear-frame.svg',
     widthScale: 1.6,
     verticalOffset: 0.05,
@@ -50,8 +50,8 @@ export const GLASSES_CATALOG: GlassesConfig[] = [
   },
   {
     id: 'sunglasses',
-    name: '墨镜',
-    caption: '深色镜片 · 飞行员型',
+    name: 'サングラス',
+    caption: 'ダークレンズ · アビエーター',
     assetUrl: 'glasses/sunglasses.svg',
     widthScale: 1.64,
     verticalOffset: 0.04,

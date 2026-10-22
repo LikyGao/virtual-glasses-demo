@@ -12,9 +12,9 @@ interface GlassesSelectorProps {
  */
 export function GlassesSelector({ catalog, selectedId, onSelect }: GlassesSelectorProps) {
   return (
-    <section className="selector" aria-label="眼镜选择区域">
-      <h2 className="section-label">选择镜框</h2>
-      <div className="selector__list" role="radiogroup" aria-label="眼镜款式">
+    <section className="selector" aria-label="メガネ選択">
+      <h2 className="section-label">フレームを選ぶ</h2>
+      <div className="selector__list" role="radiogroup" aria-label="メガネの種類">
         {catalog.map((item) => {
           const selected = item.id === selectedId;
           return (

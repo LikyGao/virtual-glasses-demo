@@ -146,7 +146,7 @@ export function VirtualTryOn({
   const isRunning = cameraStatus === 'running';
 
   return (
-    <section className="stage" aria-label="摄像头试戴区域">
+    <section className="stage" aria-label="カメラ試着エリア">
       <div
         className="stage__frame"
         style={{ aspectRatio: `${aspect.width} / ${aspect.height}` }}
@@ -163,7 +163,7 @@ export function VirtualTryOn({
         <div className="stage__overlays">
           {cameraStatus === 'error' && (
             <div className="notice notice--error" role="alert">
-              <p className="notice__title">摄像头无法开启</p>
+              <p className="notice__title">カメラを起動できません</p>
               <p className="notice__body">{cameraError}</p>
             </div>
           )}
@@ -172,7 +172,7 @@ export function VirtualTryOn({
             <div className="notice">
               <p className="notice__title">{MESSAGES.cameraIdle}</p>
               <p className="notice__body">
-                点击下方「开启摄像头」开始试戴。画面全部在本机处理，不会上传。
+                下の「カメラをオンにする」を押して試着を始めましょう。映像はすべてデバイス内で処理され、アップロードされません。
               </p>
             </div>
           )}
@@ -180,7 +180,7 @@ export function VirtualTryOn({
           {cameraStatus === 'starting' && (
             <div className="notice">
               <p className="notice__title">{MESSAGES.cameraStarting}</p>
-              <p className="notice__body">如果浏览器弹出权限请求，请选择「允许」。</p>
+              <p className="notice__body">ブラウザにアクセス許可の確認が表示されたら、「許可」を選んでください。</p>
             </div>
           )}
 
@@ -188,7 +188,7 @@ export function VirtualTryOn({
             <div className="notice notice--error" role="alert">
               <p className="notice__title">{MESSAGES.modelError}</p>
               <button type="button" className="button button--ghost" onClick={onRetryModel}>
-                重新加载模型
+                モデルを再読み込み
               </button>
             </div>
           )}
@@ -199,7 +199,7 @@ export function VirtualTryOn({
                 <span className="spinner" aria-hidden="true" />
                 {MESSAGES.modelLoading}
               </p>
-              <p className="notice__body">首次加载需要下载约 4MB 模型文件。</p>
+              <p className="notice__body">初回は約4MBのモデルファイルをダウンロードします。</p>
             </div>
           )}
         </div>
@@ -213,7 +213,7 @@ export function VirtualTryOn({
 
         {isRunning && (
           <p className="stage__readout" aria-hidden="true">
-            {faceDetected ? '已锁定人脸' : '搜索人脸中'} · {glasses.name}
+            {faceDetected ? '顔を検出しました' : '顔を検出中'} · {glasses.name}
           </p>
         )}
       </div>
