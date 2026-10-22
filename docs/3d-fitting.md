@@ -1,5 +1,28 @@
 # Face fitting and occlusion
 
+## Current display policy: v0.3.1
+
+At the user's request, the camera-facing temple is fully visible, with no face,
+head or ear-hook fading. The side is selected from the smoothed head rotation's
+local x-axis depth, before the final selfie mirror. A narrow frontal zone shows
+both arms fully. The opposite arm retains depth occlusion and rear fading.
+
+Rendering uses two passes. The first draws the normal face-occluded scene and
+only the far temple. The second clears depth, hides face/head occluders and
+writes glasses-front depth without changing its color, then draws the full near
+temple. This preserves the arm's self-depth and its connection behind the front
+frame while bypassing all head/ear masks. It also applies to exported photos.
+
+The visible footer reads `v0.3.1 · 手前のテンプルを全表示`, so the loaded
+display policy can be checked on the actual page. This deliberately favors a
+continuous near arm over realistic hair/ear occlusion.
+
+A new pixel-coverage test compares the near arm with a fully unmasked reference
+at left, frontal and right poses for all three models, and separately checks that
+the far arm remains depth-occluded. Earlier side-profile benchmark results below
+describe the preceding display policy and are retained as historical evidence,
+not measurements of this new near-arm rendering policy.
+
 ## References
 
 - [Jeeliz FaceFilter, JeelizThreeHelper.js](https://github.com/jeeliz/jeelizFaceFilter/blob/master/helpers/JeelizThreeHelper.js):
@@ -47,7 +70,7 @@ Run `npm ci`, `npm run build` and `npm test`.
 Tests use installed Chromium when available; otherwise install Playwright Chromium
 with `npx playwright install chromium`.
 
-The three browser tests cover known canonical-face rotations and 15 model/pose
+The browser tests cover known canonical-face rotations and 15 model/pose
 combinations (three models, frontal, left/right yaw and two pitch/yaw poses).
 An additional 87 rendered frames exercise continuous turns from about -60 to +60
 degrees across all three models and assert that no detached visible fragments remain.

@@ -89,6 +89,9 @@ export default function App() {
           <p className="privacy-note">
             カメラ映像はデバイスのメモリ内でのみ処理され、サーバーへの送信や保存は行われません。
           </p>
+          <p className="privacy-note" data-testid="display-version">
+            v0.3.1 · 手前のテンプルを全表示
+          </p>
         </div>
       </main>
 

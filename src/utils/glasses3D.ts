@@ -27,6 +27,9 @@ export class Glasses3D {
   private headOccluder = new THREE.Mesh(this.headGeometry, this.depthMaterial);
   private templeSpread = { value: 0 };
   private templeFadeEnabled = { value: 1 };
+  private nearTempleSide = { value: 0 };
+  private nearTempleVisible = { value: 0 };
+  private templePass = { value: 0 };
 
   constructor() {
     this.faceGeometry.setAttribute('position', this.facePositions);
@@ -127,6 +130,9 @@ export class Glasses3D {
       const pose = this.smoother.next(rawPose, now);
       this.anchor.position.copy(pose.position);
       this.anchor.quaternion.copy(pose.rotation);
+      const sideDepth = new THREE.Vector3(1, 0, 0).applyQuaternion(pose.rotation).z;
+      // At a frontal pose neither arm is farther away: show both completely.
+      this.nearTempleSide.value = Math.abs(sideDepth) < 0.08 ? 0 : Math.sign(sideDepth);
       this.anchor.scale.setScalar(pose.width);
 
       // Normalize live face depth into the SAME local frame as the glasses.
@@ -156,8 +162,50 @@ export class Glasses3D {
       this.anchor.visible = false;
       this.smoother.reset();
     }
+    this.nearTempleVisible.value = rawPose ? 1 : 0;
+    this.templePass.value = 0;
     this.renderer.render(this.scene, this.camera);
+    if (rawPose) this.renderNearTemple();
     return this.renderer.domElement;
+  }
+
+  /**
+   * Draw the near arm against glasses depth only, without face/head depth.
+   * Keeping depth testing on preserves the arm's own shape and its connection
+   * behind the front frame, instead of drawing every triangle over everything.
+   */
+  private renderNearTemple() {
+    const faceVisible = this.faceOccluder.visible;
+    const headVisible = this.headOccluder.visible;
+    this.faceOccluder.visible = this.headOccluder.visible = false;
+    const states: Array<{ material: THREE.Material; colorWrite: boolean; depthWrite: boolean }> = [];
+    for (const model of this.models.values()) {
+      if (!model.visible) continue;
+      model.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          states.push({ material, colorWrite: material.colorWrite, depthWrite: material.depthWrite });
+          if (!object.userData.isTemple) material.colorWrite = false;
+          else material.depthWrite = true;
+        }
+      });
+    }
+    const autoClear = this.renderer.autoClear;
+    this.renderer.autoClear = false;
+    this.templePass.value = 1;
+    try {
+      this.renderer.clearDepth();
+      this.renderer.render(this.scene, this.camera);
+    } finally {
+      this.renderer.autoClear = autoClear;
+      this.templePass.value = 0;
+      this.faceOccluder.visible = faceVisible;
+      this.headOccluder.visible = headVisible;
+      for (const state of states) {
+        state.material.colorWrite = state.colorWrite;
+        state.material.depthWrite = state.depthWrite;
+      }
+    }
   }
 
   private measureTempleCenterline(geometry: THREE.BufferGeometry) {
@@ -189,12 +237,16 @@ export class Glasses3D {
     material.depthWrite = false;
     material.onBeforeCompile = shader => {
       shader.uniforms.templeSpread = this.templeSpread;
+      shader.uniforms.nearTempleSide = this.nearTempleSide;
+      shader.uniforms.nearTempleVisible = this.nearTempleVisible;
+      shader.uniforms.templePass = this.templePass;
       shader.uniforms.templeFadeEnabled = this.templeFadeEnabled;
       shader.uniforms.templeFade = { value: fade };
       shader.uniforms.templeOffsetZ = { value: offsetZ };
-      shader.vertexShader = 'attribute float templeCenterX; uniform float templeSpread, templeOffsetZ; varying float templeDepth;\n' + shader.vertexShader;
+      shader.vertexShader = 'attribute float templeCenterX; uniform float templeSpread, templeOffsetZ; varying float templeDepth; varying float templeSide;\n' + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `
         #include <begin_vertex>
+        templeSide = sign(transformed.x);
         float longitudinalDepth = transformed.z + templeOffsetZ;
         // A downturned ear hook can curl forward again in z. Include its drop
         // in the fade coordinate so the tip cannot become opaque a second time.
@@ -203,14 +255,19 @@ export class Glasses3D {
         float outward = max(0.0, 0.5 + templeSpread - templeCenterX);
         transformed.x += sign(transformed.x) * outward * smoothstep(0.02, 0.32, behindHinge);
       `);
-      shader.fragmentShader = 'uniform vec2 templeFade; uniform float templeFadeEnabled; varying float templeDepth;\n' + shader.fragmentShader;
+      shader.fragmentShader = 'uniform vec2 templeFade; uniform float templeFadeEnabled, nearTempleSide, nearTempleVisible, templePass; varying float templeDepth, templeSide;\n' + shader.fragmentShader;
       shader.fragmentShader = shader.fragmentShader.replace('#include <alphatest_fragment>', `
-        diffuseColor.a *= mix(1.0, smoothstep(templeFade.y, templeFade.x, templeDepth), templeFadeEnabled);
+        float isNear = nearTempleVisible * ((abs(nearTempleSide) < 0.5) ? 1.0 : step(0.0, templeSide * nearTempleSide));
+        if (templePass < 0.5 && isNear > 0.5) discard;
+        if (templePass > 0.5 && isNear < 0.5) discard;
+        // The near arm keeps its original opacity from hinge to ear hook.
+        if (templePass < 0.5)
+          diffuseColor.a *= mix(1.0, smoothstep(templeFade.y, templeFade.x, templeDepth), templeFadeEnabled);
         if (diffuseColor.a < 0.01) discard;
         #include <alphatest_fragment>
       `);
     };
-    material.customProgramCacheKey = () => 'fitted-temple-v1';
+    material.customProgramCacheKey = () => 'near-temple-full-v2';
   }
 
   private disposeObject(object: THREE.Object3D) {
