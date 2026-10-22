@@ -5,6 +5,7 @@ import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 import type { GlassesConfig, GlassesTransform } from '../types';
 import { FACE_MESH_TRIANGLES } from '../data/faceMeshTriangles';
 import { estimateFacePose, FacePoseSmoother } from './facePose';
+import { HeadOcclusionGeometry } from './headOcclusion';
 
 export class Glasses3D {
   readonly renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -22,13 +23,16 @@ export class Glasses3D {
     colorWrite: false, depthWrite: true, depthTest: true, side: THREE.DoubleSide,
   });
   private faceOccluder = new THREE.Mesh(this.faceGeometry, this.depthMaterial);
-  private headOccluder = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), this.depthMaterial);
+  private headGeometry = new HeadOcclusionGeometry();
+  private headOccluder = new THREE.Mesh(this.headGeometry, this.depthMaterial);
+  private templeSpread = { value: 0 };
+  private templeFadeEnabled = { value: 1 };
 
   constructor() {
     this.faceGeometry.setAttribute('position', this.facePositions);
     this.facePositions.setUsage(THREE.DynamicDrawUsage);
     this.faceGeometry.setIndex(FACE_MESH_TRIANGLES);
-    this.faceOccluder.frustumCulled = false;
+    this.faceOccluder.frustumCulled = this.headOccluder.frustumCulled = false;
     // Depth-only meshes render before both opaque frames and transparent lenses.
     this.faceOccluder.renderOrder = -2;
     this.headOccluder.renderOrder = -3;
@@ -68,10 +72,32 @@ export class Glasses3D {
     const lensBox = new THREE.Box3().setFromObject(lenses);
     const frameWidth = frontBox.max.x - frontBox.min.x;
     const center = lensBox.getCenter(new THREE.Vector3());
-    root.position.sub(center);
     const normalized = new THREE.Group();
-    normalized.add(root);
-    normalized.scale.setScalar(1 / frameWidth);
+    const materials: THREE.Material[] = [];
+    // Bake static GLB transforms so temple deformation uses consistent frame-width
+    // units rather than the unrelated coordinate systems of individual assets.
+    root.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      const geometry = object.geometry.clone().applyMatrix4(object.matrixWorld);
+      geometry.translate(-center.x, -center.y, -center.z);
+      geometry.scale(1 / frameWidth, 1 / frameWidth, 1 / frameWidth);
+      const sourceMaterials = Array.isArray(object.material) ? object.material : [object.material];
+      const clones = sourceMaterials.map(material => material.clone());
+      const mesh = new THREE.Mesh(geometry, Array.isArray(object.material) ? clones : clones[0]);
+      mesh.name = object.name;
+      if (mesh.name !== config.frontMesh && mesh.name !== config.lensMesh) {
+        this.measureTempleCenterline(geometry);
+        materials.push(...clones);
+        mesh.userData.isTemple = true;
+      }
+      normalized.add(mesh);
+      object.geometry.dispose();
+    });
+    const box = new THREE.Box3().setFromObject(normalized);
+    const rear = box.min.z + config.fitOffset[2];
+    // Rear sections fade away; hinges and the main temples stay opaque.
+    const fade = new THREE.Vector2(rear + 0.22, rear + 0.02);
+    for (const material of materials) this.fitTempleMaterial(material, config.fitOffset[2], fade);
     const group = new THREE.Group();
     group.add(normalized);
     group.position.set(...config.fitOffset);
@@ -114,17 +140,15 @@ export class Glasses3D {
       }
       this.facePositions.needsUpdate = true;
 
-      // Face landmarks do not cover the scalp or back of the head. A conservative
-      // ellipsoid closes that volume, keeping far temples behind the head.
-      const halfHeadWidth = THREE.MathUtils.clamp(
-        Math.abs(localPoints[454].x - localPoints[234].x) * 0.5, 0.43, 0.62);
-      const chin = localPoints[152].y;
-      const forehead = localPoints[10].y;
-      this.headOccluder.position.set(0, (chin + forehead) * 0.5 + 0.07, -0.50);
-      this.headOccluder.scale.set(halfHeadWidth, (forehead - chin) * 0.5 + 0.14, 0.40);
+      this.headGeometry.update(localPoints);
+      // Splay the temples gently to the measured side-of-head width. The hinge
+      // stays fixed; this avoids the arm entering the temple and exiting again.
+      const halfHeadWidth = Math.abs(localPoints[127].x - localPoints[356].x) * 0.5;
+      this.templeSpread.value = THREE.MathUtils.clamp(halfHeadWidth + 0.015 - 0.5, 0, 0.10);
     } else if (transform && !landmarks) {
       // Static asset previews have no face and intentionally no occlusion.
       this.smoother.reset();
+      this.templeSpread.value = 0;
       this.anchor.position.set(transform.centerX - width / 2, height / 2 - transform.centerY, 0);
       this.anchor.rotation.set(0, 0, -transform.rotation);
       this.anchor.scale.setScalar(transform.width);
@@ -134,6 +158,59 @@ export class Glasses3D {
     }
     this.renderer.render(this.scene, this.camera);
     return this.renderer.domElement;
+  }
+
+  private measureTempleCenterline(geometry: THREE.BufferGeometry) {
+    const positions = geometry.getAttribute('position');
+    const bins = new Map<number, [number, number]>();
+    for (let i = 0; i < positions.count; i++) {
+      const x = Math.abs(positions.getX(i));
+      if (x < 0.3) continue; // exclude decorative bridge pieces
+      const bin = Math.round(positions.getZ(i) / 0.04);
+      const range = bins.get(bin) ?? [Infinity, -Infinity];
+      range[0] = Math.min(range[0], x);
+      range[1] = Math.max(range[1], x);
+      bins.set(bin, range);
+    }
+    const centers = new Float32Array(positions.count);
+    for (let i = 0; i < positions.count; i++) {
+      const range = bins.get(Math.round(positions.getZ(i) / 0.04));
+      centers[i] = range ? (range[0] + range[1]) * 0.5 : Math.abs(positions.getX(i));
+    }
+    geometry.setAttribute('templeCenterX', new THREE.BufferAttribute(centers, 1));
+  }
+
+  /**
+   * Inspired by WebAR.rocks Mirror's branch bending/fading technique (MIT).
+   * See public/licenses/webar-rocks.txt and docs/3d-fitting.md.
+   */
+  private fitTempleMaterial(material: THREE.Material, offsetZ: number, fade: THREE.Vector2) {
+    material.transparent = true;
+    material.depthWrite = false;
+    material.onBeforeCompile = shader => {
+      shader.uniforms.templeSpread = this.templeSpread;
+      shader.uniforms.templeFadeEnabled = this.templeFadeEnabled;
+      shader.uniforms.templeFade = { value: fade };
+      shader.uniforms.templeOffsetZ = { value: offsetZ };
+      shader.vertexShader = 'attribute float templeCenterX; uniform float templeSpread, templeOffsetZ; varying float templeDepth;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `
+        #include <begin_vertex>
+        float longitudinalDepth = transformed.z + templeOffsetZ;
+        // A downturned ear hook can curl forward again in z. Include its drop
+        // in the fade coordinate so the tip cannot become opaque a second time.
+        templeDepth = longitudinalDepth - 1.25 * max(0.0, 0.10 - transformed.y);
+        float behindHinge = max(0.0, -longitudinalDepth);
+        float outward = max(0.0, 0.5 + templeSpread - templeCenterX);
+        transformed.x += sign(transformed.x) * outward * smoothstep(0.02, 0.32, behindHinge);
+      `);
+      shader.fragmentShader = 'uniform vec2 templeFade; uniform float templeFadeEnabled; varying float templeDepth;\n' + shader.fragmentShader;
+      shader.fragmentShader = shader.fragmentShader.replace('#include <alphatest_fragment>', `
+        diffuseColor.a *= mix(1.0, smoothstep(templeFade.y, templeFade.x, templeDepth), templeFadeEnabled);
+        if (diffuseColor.a < 0.01) discard;
+        #include <alphatest_fragment>
+      `);
+    };
+    material.customProgramCacheKey = () => 'fitted-temple-v1';
   }
 
   private disposeObject(object: THREE.Object3D) {

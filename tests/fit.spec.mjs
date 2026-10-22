@@ -94,8 +94,10 @@ test('depth hides rear temples while retaining front frames across three models 
         const withDepth = capture(canvas);
         engine.faceOccluder.visible = false;
         engine.headOccluder.visible = false;
+        engine.templeFadeEnabled.value = 0;
         engine.renderer.render(engine.scene, engine.camera);
         const withoutDepth = capture(canvas);
+        engine.templeFadeEnabled.value = 1;
         let visible = 0, original = 0, removed = 0;
         for (let i = 3; i < withDepth.length; i += 4) {
           if (withDepth[i] > 32) visible++;
@@ -135,9 +137,50 @@ test('depth hides rear temples while retaining front frames across three models 
     expect(result.original).toBeGreaterThan(1000);
     expect(result.visible / result.original).toBeGreaterThan(.75);
     // In a frontal view, the GLB's own front can already hide most temples.
-    // Turned poses must remove a substantial set of otherwise exposed pixels.
-    if (result.yaw !== 0) expect(result.removed).toBeGreaterThan(200);
+    // Depth plus ear-hook fading must remove otherwise exposed rear pixels.
+    if (result.yaw !== 0) expect(result.removed / result.original).toBeGreaterThan(.01);
     // A depth mask that also cuts away the bridge/front is not a passing fix.
     if (result.frontRetention !== null) expect(result.frontRetention).toBeGreaterThan(.995);
+  }
+});
+
+test('side views do not leave detached ear hooks during a continuous head turn', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/');
+  const results = await page.evaluate(async vertices => {
+    const THREE = await import('/node_modules/three/build/three.module.js');
+    const { Glasses3D } = await import('/src/utils/glasses3D.ts');
+    const { GLASSES_CATALOG } = await import('/src/data/glasses.ts');
+    // Join pixels within two pixels to tolerate antialiasing and material seams,
+    // but keep actual gaps (as in the reported screenshot) as separate components.
+    const { componentAreas: components } = await import('/tests/helpers/componentAreas.mjs');
+    const engine = new Glasses3D();
+    for (const config of GLASSES_CATALOG) await engine.load(config);
+    const copy = document.createElement('canvas'); copy.width = 640; copy.height = 480;
+    const ctx = copy.getContext('2d');
+    const output = [];
+    for (const config of GLASSES_CATALOG) {
+      engine.render(640, 480, config, null, null);
+      // Keep the smoother active through each turn; do not reset between poses.
+      for (let frame = 0; frame <= 28; frame++) {
+        const yaw = -1.05 + frame * .075;
+        const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(.1, yaw, 0, 'YXZ'));
+        const matrix = new THREE.Matrix4().makeRotationFromQuaternion(q).toArray();
+        const landmarks = vertices.map(v => {
+          const p = new THREE.Vector3(...v).applyQuaternion(q).multiplyScalar(18);
+          return { x: .5 + p.x / 640, y: .5 - p.y / 480, z: -p.z / 640 };
+        });
+        const canvas = engine.render(640, 480, config, { visible: true }, landmarks, matrix, 1000 + frame * 1000 / 30);
+        ctx.clearRect(0, 0, 640, 480); ctx.drawImage(canvas, 0, 0);
+        const areas = components(ctx.getImageData(0, 0, 640, 480).data, 640, 480);
+        output.push({ id: config.id, frame, yaw, areas });
+      }
+    }
+    engine.dispose();
+    return output;
+  }, vertices);
+  for (const result of results) {
+    expect(result.areas[0], JSON.stringify(result)).toBeGreaterThan(1000);
+    expect(result.areas, JSON.stringify(result)).toHaveLength(1);
   }
 });

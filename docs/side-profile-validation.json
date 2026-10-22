@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-22",
+  "scope": "Rendered-pixel continuity evaluation, not ground-truth head-pose or anatomical-fit accuracy.",
+  "sources": [
+    {
+      "url": "https://github.com/cleardusk/3DDFA_V2/blob/master/examples/inputs/videos/214.avi",
+      "sha256": "2de4358d7db0f56e7a8b6fc44023c1e1b1b151b68ced8be5cdb4ae47b35f5b5f"
+    },
+    {
+      "url": "https://github.com/cleardusk/3DDFA_V2/blob/master/examples/inputs/emma.jpg",
+      "sha256": "c85bf90c207c3ae5645dd6d47a7e7b35af9f43f2db16038e97e28b9b5cc42119"
+    },
+    {
+      "url": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      "sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
+    }
+  ],
+  "video": {
+    "sampleFrames": 100,
+    "trackedInputs": 100,
+    "untrackedInputs": 0,
+    "renderedCases": 300,
+    "estimatedYawRange": [
+      -17.828386469164865,
+      4.230849996283237
+    ],
+    "casesWithFloatingTemples": 0,
+    "blankRenderCases": 0,
+    "errors": []
+  },
+  "profileStills": {
+    "sampleFrames": 3,
+    "trackedInputs": 6,
+    "untrackedInputs": 0,
+    "renderedCases": 18,
+    "estimatedYawRange": [
+      -44.81658404518059,
+      43.652440092102275
+    ],
+    "casesWithFloatingTemples": 0,
+    "blankRenderCases": 0,
+    "errors": []
+  },
+  "baselineComparison": {
+    "cases": 12,
+    "models": [
+      "classic-round",
+      "aviator"
+    ],
+    "beforeFloatingFragments": 13,
+    "afterFloatingFragments": 0
+  },
+  "limitations": [
+    "Estimated yaw angles are detector outputs, not ground-truth labels.",
+    "Video is mainly frontal and does not establish continuous full-profile performance.",
+    "Small islands under 16 pixels and material seams within two pixels are ignored.",
+    "A disconnected full lens is a separate fitting issue and is not classified as a floating temple.",
+    "No input images, video or face landmarks are redistributed in this repository."
+  ]
+}

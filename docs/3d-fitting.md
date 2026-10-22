@@ -34,8 +34,9 @@ longer influence centering and scale. The per-model `fitOffset` sets the fitting
 depth in front of the nose and adjusts vertical placement. Values remain visual
 estimates, because upstream provides no millimeter measurements.
 
-The 468-vertex face mesh writes only depth. An approximate ellipsoid closes the
-scalp and back of the head. Both inherit the same smoothed parent pose as the
+The 468-vertex face mesh writes only depth. A side/back shell extends the actual
+face-oval boundary backward, replacing the ellipsoid that bulged into the temples
+and tapered away too early at the ear hooks. Both inherit the same smoothed parent pose as the
 glasses; face vertices are transformed into that parent's local coordinates.
 Opaque frames and transparent lenses both obey the depth buffer. Video and PNG
 export use the resulting alpha layer, so the occluder itself remains invisible.
@@ -46,14 +47,62 @@ Run `npm ci`, `npm run build` and `npm test`.
 Tests use installed Chromium when available; otherwise install Playwright Chromium
 with `npx playwright install chromium`.
 
-The two browser tests cover known canonical-face rotations and 15 model/pose
+The three browser tests cover known canonical-face rotations and 15 model/pose
 combinations (three models, frontal, left/right yaw and two pitch/yaw poses).
+An additional 87 rendered frames exercise continuous turns from about -60 to +60
+degrees across all three models and assert that no detached visible fragments remain.
 They check pose/scale stability, gaze independence, invalid input and reacquisition,
 actual WebGL removal of hidden geometry, and preservation of frontal frames.
 These are synthetic geometry checks, not a claim of accurate fit on every real
 person. Live model initialization still requires the external MediaPipe model URL.
 
-The head volume approximates skull shape. Exact hair strands, ears, extreme
+The head volume still approximates skull shape. Exact hair strands, ears, extreme
 profiles, hands passing in front of the face, and calibrated physical sizing are
 outside this fix. GLB reuse licensing remains as documented in
 `public/models/SOURCE.md`.
+
+## Side-profile continuity correction
+
+The [WebAR.rocks Mirror eyewear example](https://github.com/WebAR-rocks/WebAR.rocks.face/blob/master/demos/VTOGlasses/main.js)
+and [WebARRocksMirror.js](https://github.com/WebAR-rocks/WebAR.rocks.face/blob/master/helpers/WebARRocksMirror.js)
+combine depth occlusion with temple bending and ear-hook fading. This version
+adapts those techniques, with the MIT notice in `public/licenses/webar-rocks.txt`.
+
+Static GLB transforms are baked into frame-width units at load time. The measured
+cross-section centerline of each temple is shifted outward to the tracked side of
+the head, preserving its cross-section and its fixed hinge. A rear-depth/drop
+fade hides ear hooks progressively, including hooks that curl forward again.
+The face boundary extends backward without the old ellipsoid's excessive bulge
+at the temples or premature narrowing behind the ears. Fronts and lenses do not
+receive the temple shader.
+
+### Real-image and video evaluation
+
+`docs/side-profile-validation.json` records source hashes and results.
+A local copy of 3DDFA_V2's 214.avi was decoded at 2 FPS and scaled to 640x360:
+100 frames tracked, 300 model/frame renders, no blank renders, page errors or
+detached small temple islands. This clip is mainly frontal (estimated yaw -17.8
+to +4.2 degrees); it is not evidence of a continuous 90-degree profile test.
+
+Three panels cropped from 3DDFA_V2's emma.jpg, plus their horizontal mirrors,
+provided six real views (estimated yaw -44.8 to +43.7 degrees), tested on all three
+models. The black frame and sunglasses previously produced 13 isolated fragments
+across these 12 cases; the revised renderer produced none. All 18 model/view cases
+passed the floating-temple check. Angles are estimates, not labeled ground truth;
+neither these checks nor the synthetic tests certify precise anatomical fit.
+
+Run additional local evaluations without uploading the input:
+```bash
+npm run dev
+# In another terminal, with a downloaded official MediaPipe face_landmarker.task:
+node scripts/validate-profile.mjs --model /path/face_landmarker.task --video /path/turning-head.mp4 --output /tmp/profile-report.json
+node scripts/validate-profile.mjs --model /path/face_landmarker.task --image /path/profile-left.png --image /path/profile-right.png --mirror --output /tmp/profile-stills.json
+```
+
+Video evaluation needs ffmpeg; Playwright needs Chromium. The runner extracts
+decoded images rather than trusting a paused video's seek event, which can leave
+the browser's texture on the preceding frame. Source media stays outside the
+checkout and is not included in production. The reports include all visible
+component areas; small islands under 16 pixels and seams up to two pixels are
+ignored. A disconnected full lens is reported in those areas but is a distinct
+fitting issue, not classified as an orphan temple.
