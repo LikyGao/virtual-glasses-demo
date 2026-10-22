@@ -14,6 +14,11 @@ export interface GlassesConfig {
   assetUrl: string;
   modelUrl: string;
   modelRotation: [number, number, number];
+  /** Mesh names identifying the front and lenses, excluding temples. */
+  frontMesh: string;
+  lensMesh: string;
+  /** Local offset as a fraction of front-frame width; z points toward camera. */
+  fitOffset: [number, number, number];
   /** 眼镜宽度 = 双眼外眼角距离 × widthScale */
   widthScale: number;
   /** 垂直偏移，单位是「眼镜高度的倍数」，正数向下（沿头部倾斜方向） */

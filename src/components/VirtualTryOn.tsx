@@ -11,7 +11,6 @@ import type {
 } from '../types';
 import { clearCanvas, renderFrame } from '../utils/canvasRender';
 import { computeGlassesTransform } from '../utils/faceGeometry';
-import { GlassesTransformSmoother } from '../utils/smoothing';
 
 interface VirtualTryOnProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -62,8 +61,6 @@ export function VirtualTryOn({
   const glassesRef = useRef(glasses);
   glassesRef.current = glasses;
 
-  const smootherRef = useRef(new GlassesTransformSmoother());
-
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -78,13 +75,11 @@ export function VirtualTryOn({
       return;
     }
 
-    const smoother = smootherRef.current;
-    smoother.reset();
-
     let rafId = 0;
     let lastVideoTime = -1;
     let lastFaceAt = -Infinity;
     let landmarks: NormalizedLandmark[] | null = null;
+    let faceMatrix: number[] | null = null;
     let lastTransform: GlassesTransform | null = null;
     let faceStateCache = false;
 
@@ -117,7 +112,6 @@ export function VirtualTryOn({
       if (faceLandmarker && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
         const result = faceLandmarker.detectForVideo(video, now);
-        landmarks = result.faceLandmarks[0] ?? null;
         const raw = computeGlassesTransform(
           result.faceLandmarks[0],
           canvas.width,
@@ -126,8 +120,10 @@ export function VirtualTryOn({
         );
 
         if (raw.visible) {
+          landmarks = result.faceLandmarks[0];
+          faceMatrix = result.facialTransformationMatrixes?.[0]?.data ?? null;
           lastFaceAt = now;
-          lastTransform = smoother.smooth(raw, canvas.width);
+          lastTransform = raw;
         }
       }
 
@@ -135,14 +131,15 @@ export function VirtualTryOn({
       const hasFace = !!faceLandmarker && now - lastFaceAt < FACE_LOST_GRACE_MS;
       if (!hasFace && lastTransform) {
         lastTransform = null;
-        smoother.reset();
+        landmarks = null;
+        faceMatrix = null;
       }
       updateFaceState(hasFace);
 
       renderFrame(ctx, video, null);
       const engine = rendererRef.current;
       if (engine) {
-        const layer = engine.render(canvas.width, canvas.height, glassesRef.current, lastTransform, landmarks);
+        const layer = engine.render(canvas.width, canvas.height, glassesRef.current, lastTransform, landmarks, faceMatrix, now);
         // Mirror the model exactly once, matching the existing mirrored camera layer.
         ctx.save();
         ctx.translate(canvas.width, 0);
@@ -156,7 +153,6 @@ export function VirtualTryOn({
 
     return () => {
       cancelAnimationFrame(rafId);
-      smoother.reset();
     };
     // 依赖里刻意不含 glasses：切换眼镜不重启循环，也不重建摄像头和模型
   }, [cameraStatus, faceLandmarker, videoRef, canvasRef]);

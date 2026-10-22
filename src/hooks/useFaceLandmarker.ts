@@ -28,7 +28,7 @@ async function createLandmarker(): Promise<FaceLandmarker> {
       runningMode: 'VIDEO',
       numFaces: MAX_FACES,
       outputFaceBlendshapes: false,
-      outputFacialTransformationMatrixes: false,
+      outputFacialTransformationMatrixes: true,
     });
   } catch (gpuError) {
     // 部分设备（老旧安卓、禁用 WebGL 的浏览器）无法使用 GPU，回退到 CPU
@@ -38,7 +38,7 @@ async function createLandmarker(): Promise<FaceLandmarker> {
       runningMode: 'VIDEO',
       numFaces: MAX_FACES,
       outputFaceBlendshapes: false,
-      outputFacialTransformationMatrixes: false,
+      outputFacialTransformationMatrixes: true,
     });
   }
 }
