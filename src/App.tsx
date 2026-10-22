@@ -5,7 +5,6 @@ import { VirtualTryOn } from './components/VirtualTryOn';
 import { DEFAULT_GLASSES_ID, GLASSES_CATALOG } from './data/glasses';
 import { useCamera } from './hooks/useCamera';
 import { useFaceLandmarker } from './hooks/useFaceLandmarker';
-import { useGlassesImages } from './hooks/useGlassesImages';
 import { downloadCanvasAsPng } from './utils/screenshot';
 
 export default function App() {
@@ -17,7 +16,6 @@ export default function App() {
 
   const camera = useCamera(videoRef);
   const { faceLandmarker, status: modelStatus, retry: retryModel } = useFaceLandmarker();
-  const { imagesRef } = useGlassesImages(GLASSES_CATALOG);
 
   const selectedGlasses = useMemo(
     () => GLASSES_CATALOG.find((item) => item.id === selectedId) ?? GLASSES_CATALOG[0],
@@ -72,7 +70,6 @@ export default function App() {
           cameraStatus={camera.status}
           cameraError={camera.error}
           glasses={selectedGlasses}
-          imagesRef={imagesRef}
         />
 
         <div className="panel">

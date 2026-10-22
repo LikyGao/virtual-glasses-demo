@@ -1,7 +1,8 @@
-import type { FaceLandmarker } from '@mediapipe/tasks-vision';
+import type { NormalizedLandmark, FaceLandmarker } from '@mediapipe/tasks-vision';
 import { useEffect, useRef, useState } from 'react';
 import { FACE_LOST_GRACE_MS, MESSAGES } from '../constants';
-import type { GlassesImageMap } from '../hooks/useGlassesImages';
+import { Glasses3D } from '../utils/glasses3D';
+import { GLASSES_CATALOG } from '../data/glasses';
 import type {
   CameraStatus,
   GlassesConfig,
@@ -21,7 +22,6 @@ interface VirtualTryOnProps {
   cameraStatus: CameraStatus;
   cameraError: string | null;
   glasses: GlassesConfig;
-  imagesRef: React.RefObject<GlassesImageMap>;
 }
 
 /** 默认预览比例，拿到真实视频尺寸前先按 4:3 占位 */
@@ -36,8 +36,25 @@ export function VirtualTryOn({
   cameraStatus,
   cameraError,
   glasses,
-  imagesRef,
 }: VirtualTryOnProps) {
+  const rendererRef = useRef<Glasses3D | null>(null);
+  const [assetStatus, setAssetStatus] = useState('loading');
+  const [assetAttempt, setAssetAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    let engine: Glasses3D | null = null;
+    setAssetStatus('loading');
+    try {
+      engine = new Glasses3D();
+      rendererRef.current = engine;
+      Promise.all(GLASSES_CATALOG.map(config => engine!.load(config)))
+        .then(() => { if (active) setAssetStatus('ready'); })
+        .catch(() => { if (active) setAssetStatus('error'); });
+    } catch {
+      setAssetStatus('error');
+    }
+    return () => { active = false; rendererRef.current = null; engine?.dispose(); };
+  }, [assetAttempt]);
   const [faceDetected, setFaceDetected] = useState(false);
   const [aspect, setAspect] = useState(DEFAULT_ASPECT);
 
@@ -66,7 +83,8 @@ export function VirtualTryOn({
 
     let rafId = 0;
     let lastVideoTime = -1;
-    let lastFaceAt = 0;
+    let lastFaceAt = -Infinity;
+    let landmarks: NormalizedLandmark[] | null = null;
     let lastTransform: GlassesTransform | null = null;
     let faceStateCache = false;
 
@@ -99,6 +117,7 @@ export function VirtualTryOn({
       if (faceLandmarker && video.currentTime !== lastVideoTime) {
         lastVideoTime = video.currentTime;
         const result = faceLandmarker.detectForVideo(video, now);
+        landmarks = result.faceLandmarks[0] ?? null;
         const raw = computeGlassesTransform(
           result.faceLandmarks[0],
           canvas.width,
@@ -120,18 +139,17 @@ export function VirtualTryOn({
       }
       updateFaceState(hasFace);
 
-      const image = imagesRef.current.get(glassesRef.current.id) ?? null;
-      renderFrame(
-        ctx,
-        video,
-        lastTransform && image
-          ? {
-              image,
-              transform: lastTransform,
-              opacity: glassesRef.current.opacity,
-            }
-          : null,
-      );
+      renderFrame(ctx, video, null);
+      const engine = rendererRef.current;
+      if (engine) {
+        const layer = engine.render(canvas.width, canvas.height, glassesRef.current, lastTransform, landmarks);
+        // Mirror the model exactly once, matching the existing mirrored camera layer.
+        ctx.save();
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(layer, 0, 0);
+        ctx.restore();
+      }
     };
 
     rafId = requestAnimationFrame(render);
@@ -141,7 +159,7 @@ export function VirtualTryOn({
       smoother.reset();
     };
     // 依赖里刻意不含 glasses：切换眼镜不重启循环，也不重建摄像头和模型
-  }, [cameraStatus, faceLandmarker, videoRef, canvasRef, imagesRef]);
+  }, [cameraStatus, faceLandmarker, videoRef, canvasRef]);
 
   const isRunning = cameraStatus === 'running';
 
@@ -161,6 +179,11 @@ export function VirtualTryOn({
         </div>
 
         <div className="stage__overlays">
+          {assetStatus === 'loading' && <p className="notice" role="status">3Dフレームを読み込み中…</p>}
+          {assetStatus === 'error' && <div className="notice notice--error" role="alert">
+            <p>3Dフレームを表示できません。WebGLとネットワーク接続をご確認ください。</p>
+            <button className="button button--ghost" onClick={() => setAssetAttempt(value => value + 1)}>再試行</button>
+          </div>}
           {cameraStatus === 'error' && (
             <div className="notice notice--error" role="alert">
               <p className="notice__title">カメラを起動できません</p>
