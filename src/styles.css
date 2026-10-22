@@ -330,13 +330,12 @@ button {
 
 .controls {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: 10px;
 }
 
-@media (min-width: 460px) {
-  .controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.controls .button {
+  white-space: nowrap;
 }
 
 .button {
